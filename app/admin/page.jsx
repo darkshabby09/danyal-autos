@@ -2,7 +2,7 @@ import Link from 'next/link';
 import ImageField from '@/components/ImageField';
 import ConfirmForm from '@/components/ConfirmForm';
 import { isAdmin } from '@/lib/auth';
-import { getSettings, list, sb } from '@/lib/db';
+import { dbReady, getSettings, list, sb } from '@/lib/db';
 import { SETTINGS, TABS } from '@/lib/admin-config';
 import { imgUrl } from '@/lib/utils';
 import { login, logout, remove, save, saveSettings } from './actions';
@@ -37,6 +37,22 @@ export default async function Admin({ searchParams }) {
       </span>
     </div>
   );
+
+  // The database is not connected yet: the panel cannot list or save anything.
+  if (!dbReady()) {
+    return (
+      <div className="adm">{nav}
+        <div className="wrap">
+          <h1>Database not connected</h1>
+          <p className="err">
+            SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing. Add them in the environment
+            variables of the hosting project, then redeploy. After that this panel will list and save
+            bikes, accessories and photos.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (s === 'settings') {
     const [cur, cats] = await Promise.all([getSettings(), list('categories', { asc: true })]);

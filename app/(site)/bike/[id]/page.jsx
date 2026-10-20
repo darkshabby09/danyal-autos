@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Img } from '@/components/Card';
 import { Calculator } from '@/components/Emi';
-import { getSettings, sb } from '@/lib/db';
+import { dbReady, getSettings, sb } from '@/lib/db';
 import { num, waLink } from '@/lib/utils';
 
 export async function generateMetadata({ params }) {
+  if (!dbReady()) return {};
   const { data } = await sb().from('stock').select('title,details').eq('id', parseInt(params.id, 10) || 0).maybeSingle();
   return data ? { title: data.title, description: (data.details || '').slice(0, 150) } : {};
 }
@@ -13,6 +14,7 @@ export async function generateMetadata({ params }) {
 export default async function Bike({ params }) {
   const id = parseInt(params.id, 10);
   if (!id) notFound();
+  if (!dbReady()) notFound();
   const { data: r } = await sb().from('stock').select('*').eq('id', id).maybeSingle();
   if (!r) notFound();
   const [s, { data: cat }] = await Promise.all([getSettings(), sb().from('categories').select('name').eq('id', r.category_id || 0).maybeSingle()]);
